@@ -36,8 +36,8 @@
  *         David V. Lu!!
  *         Steve Macenski
  *********************************************************************/
-#ifndef COSTMAP_2D_VOXEL_LAYER_H_
-#define COSTMAP_2D_VOXEL_LAYER_H_
+#ifndef COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
+#define COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
 
 #include <ros/ros.h>
 #include <costmap_2d/layer.h>
@@ -53,23 +53,23 @@
 #include <tf/message_filter.h>
 #include <message_filters/subscriber.h>
 #include <dynamic_reconfigure/server.h>
-#include <costmap_2d/VoxelPluginConfig.h>
+#include <nonpersistent_voxel_layer/NonPersistentVoxelPluginConfig.h>
 #include <costmap_2d/obstacle_layer.h>
 #include <voxel_grid/voxel_grid.h>
 
 namespace costmap_2d
 {
 
-class VoxelLayer : public ObstacleLayer
+class NonPersistentVoxelLayer : public ObstacleLayer
 {
 public:
-  VoxelLayer() :
+  NonPersistentVoxelLayer() :
       voxel_grid_(0, 0, 0)
   {
     costmap_ = NULL;  // this is the unsigned char* member of parent class's parent class Costmap2D.
   }
 
-  virtual ~VoxelLayer();
+  virtual ~NonPersistentVoxelLayer();
 
   virtual void onInitialize();
   virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
@@ -90,12 +90,12 @@ protected:
   virtual void resetMaps();
 
 private:
-  void reconfigureCB(costmap_2d::VoxelPluginConfig &config, uint32_t level);
+  void reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level);
   void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
   virtual void raytraceFreespace(const costmap_2d::Observation& clearing_observation, double* min_x, double* min_y,
                                  double* max_x, double* max_y);
 
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig> *voxel_dsrv_;
+  dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig> *voxel_dsrv_;
 
   bool publish_voxel_;
   ros::Publisher voxel_pub_;
@@ -149,4 +149,4 @@ private:
 
 }  // namespace costmap_2d
 
-#endif // COSTMAP_2D_VOXEL_LAYER_H_
+#endif // COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_

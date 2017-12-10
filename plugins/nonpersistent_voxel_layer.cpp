@@ -36,12 +36,12 @@
  *         David V. Lu!!
  *         Steve Macenski
  *********************************************************************/
-#include <costmap_2d/voxel_layer.h>
+#include <nonpersistent_voxel_layer/nonpersistent_voxel_layer.hpp>
 #include <pluginlib/class_list_macros.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 #define VOXEL_BITS 16
-PLUGINLIB_EXPORT_CLASS(costmap_2d::VoxelLayer, costmap_2d::Layer)
+PLUGINLIB_EXPORT_CLASS(costmap_2d::NonPersistentVoxelLayer, costmap_2d::Layer)
 
 using costmap_2d::NO_INFORMATION;
 using costmap_2d::LETHAL_OBSTACLE;
@@ -53,7 +53,7 @@ using costmap_2d::Observation;
 namespace costmap_2d
 {
 
-void VoxelLayer::onInitialize()
+void NonPersistentVoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
   ros::NodeHandle private_nh("~/" + name_);
@@ -65,21 +65,21 @@ void VoxelLayer::onInitialize()
   clearing_endpoints_pub_ = private_nh.advertise<sensor_msgs::PointCloud>("clearing_endpoints", 1);
 }
 
-void VoxelLayer::setupDynamicReconfigure(ros::NodeHandle& nh)
+void NonPersistentVoxelLayer::setupDynamicReconfigure(ros::NodeHandle& nh)
 {
-  voxel_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::VoxelPluginConfig>::CallbackType cb = boost::bind(
-      &VoxelLayer::reconfigureCB, this, _1, _2);
+  voxel_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig>(nh);
+  dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig>::CallbackType cb = boost::bind(
+      &NonPersistentVoxelLayer::reconfigureCB, this, _1, _2);
   voxel_dsrv_->setCallback(cb);
 }
 
-VoxelLayer::~VoxelLayer()
+NonPersistentVoxelLayer::~NonPersistentVoxelLayer()
 {
   if (voxel_dsrv_)
     delete voxel_dsrv_;
 }
 
-void VoxelLayer::reconfigureCB(costmap_2d::VoxelPluginConfig &config, uint32_t level)
+void NonPersistentVoxelLayer::reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level)
 {
   enabled_ = config.enabled;
   footprint_clearing_enabled_ = config.footprint_clearing_enabled;
@@ -93,14 +93,14 @@ void VoxelLayer::reconfigureCB(costmap_2d::VoxelPluginConfig &config, uint32_t l
   matchSize();
 }
 
-void VoxelLayer::matchSize()
+void NonPersistentVoxelLayer::matchSize()
 {
   ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
   ROS_ASSERT(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
 }
 
-void VoxelLayer::reset()
+void NonPersistentVoxelLayer::reset()
 {
   deactivate();
   resetMaps();
@@ -108,13 +108,13 @@ void VoxelLayer::reset()
   activate();
 }
 
-void VoxelLayer::resetMaps()
+void NonPersistentVoxelLayer::resetMaps()
 {
   Costmap2D::resetMaps();
   voxel_grid_.reset();
 }
 
-void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
+void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
                                        double* min_y, double* max_x, double* max_y)
 {
   if (rolling_window_)
@@ -213,7 +213,7 @@ void VoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void VoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
+void NonPersistentVoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
 {
   // get the cell coordinates of the center point of the window
   unsigned int mx, my;
@@ -264,7 +264,7 @@ void VoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_
   }
 }
 
-void VoxelLayer::raytraceFreespace(const Observation& clearing_observation, double* min_x, double* min_y,
+void NonPersistentVoxelLayer::raytraceFreespace(const Observation& clearing_observation, double* min_x, double* min_y,
                                            double* max_x, double* max_y)
 {
   if (clearing_observation.cloud_->points.size() == 0)
@@ -381,8 +381,9 @@ void VoxelLayer::raytraceFreespace(const Observation& clearing_observation, doub
 
     clearing_endpoints_pub_.publish(clearing_endpoints_);
   }
+}
 
-void VoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
+void NonPersistentVoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
 {
   // project the new origin into the grid
   int cell_ox, cell_oy;
