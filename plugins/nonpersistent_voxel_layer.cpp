@@ -114,16 +114,25 @@ void NonPersistentVoxelLayer::resetMaps()
 void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
                                        double* min_y, double* max_x, double* max_y)
 {
+  // update origin information for rolling costmap publication
   if (rolling_window_)
+  {
     updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
+  }
+
+  // reset maps each iteration
+  resetMaps();
+
+  // if not enabled, stop here
   if (!enabled_)
     return;
+
+  // get the maximum sized window required to operate
   useExtraBounds(min_x, min_y, max_x, max_y);
 
+  // get the marking observations
   bool current = true;
   std::vector<Observation> observations;
-
-  // get the marking observations
   current = getMarkingObservations(observations) && current;
 
   // update the global current status
@@ -211,18 +220,6 @@ void NonPersistentVoxelLayer::updateOrigin(double new_origin_x, double new_origi
   // update the origin with the appropriate world coordinates
   origin_x_ = origin_x_ + cell_ox * resolution_;
   origin_y_ = origin_y_ + cell_oy * resolution_;
-
-  // we need to compute the overlap of the new and existing windows
-  int lower_left_x, lower_left_y;
-  lower_left_x = std::min(std::max(cell_ox, 0), (int)size_x_);
-  lower_left_y = std::min(std::max(cell_oy, 0), (int)size_y_);
-
-  // we'll reset our maps to unknown space if appropriate
-  resetMaps();
-
-  // compute the starting cell location for copying data back in
-  int start_x = lower_left_x - cell_ox;
-  int start_y = lower_left_y - cell_oy;
 }
 
 } // namespace costmap_2d
