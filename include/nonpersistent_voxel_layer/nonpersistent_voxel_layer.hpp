@@ -86,14 +86,10 @@ public:
 
 protected:
   virtual void setupDynamicReconfigure(ros::NodeHandle& nh);
-
   virtual void resetMaps();
 
 private:
   void reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level);
-  void clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info);
-  virtual void raytraceFreespace(const costmap_2d::Observation& clearing_observation, double* min_x, double* min_y,
-                                 double* max_x, double* max_y);
 
   dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig> *voxel_dsrv_;
 
@@ -102,8 +98,6 @@ private:
   voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
-  ros::Publisher clearing_endpoints_pub_;
-  sensor_msgs::PointCloud clearing_endpoints_;
 
   inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz)
   {

@@ -61,8 +61,6 @@ void NonPersistentVoxelLayer::onInitialize()
   private_nh.param("publish_voxel_map", publish_voxel_, false);
   if (publish_voxel_)
     voxel_pub_ = private_nh.advertise < costmap_2d::VoxelGrid > ("voxel_grid", 1);
-
-  clearing_endpoints_pub_ = private_nh.advertise<sensor_msgs::PointCloud>("clearing_endpoints", 1);
 }
 
 void NonPersistentVoxelLayer::setupDynamicReconfigure(ros::NodeHandle& nh)
@@ -82,7 +80,6 @@ NonPersistentVoxelLayer::~NonPersistentVoxelLayer()
 void NonPersistentVoxelLayer::reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level)
 {
   enabled_ = config.enabled;
-  footprint_clearing_enabled_ = config.footprint_clearing_enabled;
   max_obstacle_height_ = config.max_obstacle_height;
   size_z_ = config.z_voxels;
   origin_z_ = config.origin_z;
@@ -124,22 +121,13 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   bool current = true;
-  std::vector<Observation> observations, clearing_observations;
+  std::vector<Observation> observations;
 
   // get the marking observations
   current = getMarkingObservations(observations) && current;
 
-  // get the clearing observations
-  current = getClearingObservations(clearing_observations) && current;
-
   // update the global current status
   current_ = current;
-
-  // raytrace freespace
-  for (unsigned int i = 0; i < clearing_observations.size(); ++i)
-  {
-    raytraceFreespace(clearing_observations[i], min_x, min_y, max_x, max_y);
-  }
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
   for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it)
@@ -211,176 +199,6 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
-}
-
-void NonPersistentVoxelLayer::clearNonLethal(double wx, double wy, double w_size_x, double w_size_y, bool clear_no_info)
-{
-  // get the cell coordinates of the center point of the window
-  unsigned int mx, my;
-  if (!worldToMap(wx, wy, mx, my))
-    return;
-
-  // compute the bounds of the window
-  double start_x = wx - w_size_x / 2;
-  double start_y = wy - w_size_y / 2;
-  double end_x = start_x + w_size_x;
-  double end_y = start_y + w_size_y;
-
-  // scale the window based on the bounds of the costmap
-  start_x = std::max(origin_x_, start_x);
-  start_y = std::max(origin_y_, start_y);
-
-  end_x = std::min(origin_x_ + getSizeInMetersX(), end_x);
-  end_y = std::min(origin_y_ + getSizeInMetersY(), end_y);
-
-  // get the map coordinates of the bounds of the window
-  unsigned int map_sx, map_sy, map_ex, map_ey;
-
-  // check for legality just in case
-  if (!worldToMap(start_x, start_y, map_sx, map_sy) || !worldToMap(end_x, end_y, map_ex, map_ey))
-    return;
-
-  // we know that we want to clear all non-lethal obstacles in this window to get it ready for inflation
-  unsigned int index = getIndex(map_sx, map_sy);
-  unsigned char* current = &costmap_[index];
-  for (unsigned int j = map_sy; j <= map_ey; ++j)
-  {
-    for (unsigned int i = map_sx; i <= map_ex; ++i)
-    {
-      // if the cell is a lethal obstacle... we'll keep it and queue it, otherwise... we'll clear it
-      if (*current != LETHAL_OBSTACLE)
-      {
-        if (clear_no_info || *current != NO_INFORMATION)
-        {
-          *current = FREE_SPACE;
-          voxel_grid_.clearVoxelColumn(index);
-        }
-      }
-      current++;
-      index++;
-    }
-    current += size_x_ - (map_ex - map_sx) - 1;
-    index += size_x_ - (map_ex - map_sx) - 1;
-  }
-}
-
-void NonPersistentVoxelLayer::raytraceFreespace(const Observation& clearing_observation, double* min_x, double* min_y,
-                                           double* max_x, double* max_y)
-{
-  if (clearing_observation.cloud_->points.size() == 0)
-    return;
-
-  double sensor_x, sensor_y, sensor_z;
-  double ox = clearing_observation.origin_.x;
-  double oy = clearing_observation.origin_.y;
-  double oz = clearing_observation.origin_.z;
-
-  if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z))
-  {
-    ROS_WARN_THROTTLE(
-        1.0,
-        "The origin for the sensor at (%.2f, %.2f, %.2f) is out of map bounds. So, the costmap cannot raytrace for it.",
-        ox, oy, oz);
-    return;
-  }
-
-  bool publish_clearing_points = (clearing_endpoints_pub_.getNumSubscribers() > 0);
-  if (publish_clearing_points)
-  {
-    clearing_endpoints_.points.clear();
-    clearing_endpoints_.points.reserve(clearing_observation.cloud_->points.size());
-  }
-
-  // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
-  double map_end_x = origin_x_ + getSizeInMetersX();
-  double map_end_y = origin_y_ + getSizeInMetersY();
-
-  for (unsigned int i = 0; i < clearing_observation.cloud_->points.size(); ++i)
-  {
-    double wpx = clearing_observation.cloud_->points[i].x;
-    double wpy = clearing_observation.cloud_->points[i].y;
-    double wpz = clearing_observation.cloud_->points[i].z;
-
-    double distance = dist(ox, oy, oz, wpx, wpy, wpz);
-    double scaling_fact = 1.0;
-    scaling_fact = std::max(std::min(scaling_fact, (distance - 2 * resolution_) / distance), 0.0);
-    wpx = scaling_fact * (wpx - ox) + ox;
-    wpy = scaling_fact * (wpy - oy) + oy;
-    wpz = scaling_fact * (wpz - oz) + oz;
-
-    double a = wpx - ox;
-    double b = wpy - oy;
-    double c = wpz - oz;
-    double t = 1.0;
-
-    // we can only raytrace to a maximum z height
-    if (wpz > max_obstacle_height_)
-    {
-      // we know we want the vector's z value to be max_z
-      t = std::max(0.0, std::min(t, (max_obstacle_height_ - 0.01 - oz) / c));
-    }
-    // and we can only raytrace down to the floor
-    else if (wpz < origin_z_)
-    {
-      // we know we want the vector's z value to be 0.0
-      t = std::min(t, (origin_z_ - oz) / c);
-    }
-
-    // the minimum value to raytrace from is the origin
-    if (wpx < origin_x_)
-    {
-      t = std::min(t, (origin_x_ - ox) / a);
-    }
-    if (wpy < origin_y_)
-    {
-      t = std::min(t, (origin_y_ - oy) / b);
-    }
-
-    // the maximum value to raytrace to is the end of the map
-    if (wpx > map_end_x)
-    {
-      t = std::min(t, (map_end_x - ox) / a);
-    }
-    if (wpy > map_end_y)
-    {
-      t = std::min(t, (map_end_y - oy) / b);
-    }
-
-    wpx = ox + a * t;
-    wpy = oy + b * t;
-    wpz = oz + c * t;
-
-    double point_x, point_y, point_z;
-    if (worldToMap3DFloat(wpx, wpy, wpz, point_x, point_y, point_z))
-    {
-      unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
-
-      // voxel_grid_.markVoxelLine(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z);
-      voxel_grid_.clearVoxelLineInMap(sensor_x, sensor_y, sensor_z, point_x, point_y, point_z, costmap_,
-                                      unknown_threshold_, mark_threshold_, FREE_SPACE, NO_INFORMATION,
-                                      cell_raytrace_range);
-
-      updateRaytraceBounds(ox, oy, wpx, wpy, clearing_observation.raytrace_range_, min_x, min_y, max_x, max_y);
-
-      if (publish_clearing_points)
-      {
-        geometry_msgs::Point32 point;
-        point.x = wpx;
-        point.y = wpy;
-        point.z = wpz;
-        clearing_endpoints_.points.push_back(point);
-      }
-    }
-  }
-
-  if (publish_clearing_points)
-  {
-    clearing_endpoints_.header.frame_id = global_frame_;
-    clearing_endpoints_.header.stamp = pcl_conversions::fromPCL(clearing_observation.cloud_->header).stamp;
-    clearing_endpoints_.header.seq = clearing_observation.cloud_->header.seq;
-
-    clearing_endpoints_pub_.publish(clearing_endpoints_);
-  }
 }
 
 void NonPersistentVoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
