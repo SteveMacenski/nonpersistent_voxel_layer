@@ -208,54 +208,21 @@ void NonPersistentVoxelLayer::updateOrigin(double new_origin_x, double new_origi
   cell_ox = int((new_origin_x - origin_x_) / resolution_);
   cell_oy = int((new_origin_y - origin_y_) / resolution_);
 
-  // compute the associated world coordinates for the origin cell
-  // beacuase we want to keep things grid-aligned
-  double new_grid_ox, new_grid_oy;
-  new_grid_ox = origin_x_ + cell_ox * resolution_;
-  new_grid_oy = origin_y_ + cell_oy * resolution_;
-
-  // To save casting from unsigned int to int a bunch of times
-  int size_x = size_x_;
-  int size_y = size_y_;
+  // update the origin with the appropriate world coordinates
+  origin_x_ = origin_x_ + cell_ox * resolution_;
+  origin_y_ = origin_y_ + cell_oy * resolution_;
 
   // we need to compute the overlap of the new and existing windows
-  int lower_left_x, lower_left_y, upper_right_x, upper_right_y;
-  lower_left_x = std::min(std::max(cell_ox, 0), size_x);
-  lower_left_y = std::min(std::max(cell_oy, 0), size_y);
-  upper_right_x = std::min(std::max(cell_ox + size_x, 0), size_x);
-  upper_right_y = std::min(std::max(cell_oy + size_y, 0), size_y);
-
-  unsigned int cell_size_x = upper_right_x - lower_left_x;
-  unsigned int cell_size_y = upper_right_y - lower_left_y;
-
-  // we need a map to store the obstacles in the window temporarily
-  unsigned char* local_map = new unsigned char[cell_size_x * cell_size_y];
-  unsigned int* local_voxel_map = new unsigned int[cell_size_x * cell_size_y];
-  unsigned int* voxel_map = voxel_grid_.getData();
-
-  // copy the local window in the costmap to the local map
-  copyMapRegion(costmap_, lower_left_x, lower_left_y, size_x_, local_map, 0, 0, cell_size_x, cell_size_x, cell_size_y);
-  copyMapRegion(voxel_map, lower_left_x, lower_left_y, size_x_, local_voxel_map, 0, 0, cell_size_x, cell_size_x,
-                cell_size_y);
+  int lower_left_x, lower_left_y;
+  lower_left_x = std::min(std::max(cell_ox, 0), (int)size_x_);
+  lower_left_y = std::min(std::max(cell_oy, 0), (int)size_y_);
 
   // we'll reset our maps to unknown space if appropriate
   resetMaps();
 
-  // update the origin with the appropriate world coordinates
-  origin_x_ = new_grid_ox;
-  origin_y_ = new_grid_oy;
-
   // compute the starting cell location for copying data back in
   int start_x = lower_left_x - cell_ox;
   int start_y = lower_left_y - cell_oy;
-
-  // now we want to copy the overlapping information back into the map, but in its new location
-  copyMapRegion(local_map, 0, 0, cell_size_x, costmap_, start_x, start_y, size_x_, cell_size_x, cell_size_y);
-  copyMapRegion(local_voxel_map, 0, 0, cell_size_x, voxel_map, start_x, start_y, size_x_, cell_size_x, cell_size_y);
-
-  // make sure to clean up
-  delete[] local_map;
-  delete[] local_voxel_map;
 }
 
 } // namespace costmap_2d
