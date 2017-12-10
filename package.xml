@@ -1,0 +1,61 @@
+<package>
+    <name>nonpersistent_voxel_layer</name>
+    <version>1.14.2</version>
+    <description>include
+        This package provides an implementation of a 3D costmap that takes in sensor
+        data from the world, builds a 3D occupancy grid of the data for only one iteration.
+    </description>
+    <author>Eitan Marder-Eppstein</author>
+    <author>David V. Lu!!</author>
+    <author>Dave Hershberger</author>
+    <author>Steven Macenski</author>
+    <author>stevenmacenski@gmail.com</author>
+    <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
+    <license>BSD</license>
+    <url>http://wiki.ros.org/non-persisent-voxel-layer</url>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>cmake_modules</build_depend>
+    <build_depend>dynamic_reconfigure</build_depend>
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>laser_geometry</build_depend>
+    <build_depend>map_msgs</build_depend>
+    <build_depend>message_filters</build_depend>
+    <build_depend>message_generation</build_depend>
+    <build_depend>nav_msgs</build_depend>
+    <build_depend>pcl_conversions</build_depend>
+    <build_depend>pcl_ros</build_depend>
+    <build_depend>pluginlib</build_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>sensor_msgs</build_depend>
+    <build_depend>std_msgs</build_depend>
+    <build_depend>tf</build_depend>
+    <build_depend>visualization_msgs</build_depend>
+    <build_depend>voxel_grid</build_depend>
+    <build_depend>costmap_2d</build_depend>
+
+
+    <run_depend>dynamic_reconfigure</run_depend>
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>laser_geometry</run_depend>
+    <run_depend>map_msgs</run_depend>
+    <run_depend>message_filters</run_depend>
+    <run_depend>message_runtime</run_depend>
+    <run_depend>nav_msgs</run_depend>
+    <run_depend>pcl_conversions</run_depend>
+    <run_depend>pcl_ros</run_depend>
+    <run_depend>pluginlib</run_depend>
+    <run_depend>rosconsole</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>sensor_msgs</run_depend>
+    <run_depend>std_msgs</run_depend>
+    <run_depend>tf</run_depend>
+    <run_depend>visualization_msgs</run_depend>
+    <run_depend>voxel_grid</run_depend>
+    <run_depend>costmap_2d</run_depend>
+
+    <export>
+      <costmap_2d plugin="${prefix}/costmap_plugins.xml"/>
+    </export>
+</package>

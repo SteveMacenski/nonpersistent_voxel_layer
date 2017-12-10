@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="liblayers">
+    <class type="costmap_2d::NonPersisentVoxelLayer"     base_class_type="costmap_2d::Layer">
+      <description>Similar to voxel costmap, but 3D stored data is not saved between iterations.</description>
+    </class>
+  </library>
+</class_libraries>
