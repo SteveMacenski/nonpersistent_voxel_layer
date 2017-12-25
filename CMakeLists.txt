@@ -45,7 +45,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
     INCLUDE_DIRS
         include
-    LIBRARIES layers
+    LIBRARIES nonpersistent_voxel_layer
     CATKIN_DEPENDS
         dynamic_reconfigure
         geometry_msgs
@@ -69,14 +69,13 @@ catkin_package(
         Boost
 )
 
-add_library(layers
+add_library(nonpersistent_voxel_layer
   plugins/nonpersistent_voxel_layer.cpp
 )
-add_dependencies(layers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(layers)
+target_link_libraries(nonpersistent_voxel_layer ${catkin_LIBRARIES})
 
 install(TARGETS
-    layers
+    nonpersistent_voxel_layer
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
@@ -85,7 +84,7 @@ install(FILES costmap_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY include/nonpersistent_voxel_layer/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".svn" EXCLUDE
 )
