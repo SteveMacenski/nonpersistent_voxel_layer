@@ -72,6 +72,7 @@ catkin_package(
 add_library(nonpersistent_voxel_layer
   plugins/nonpersistent_voxel_layer.cpp
 )
+add_dependencies(nonpersistent_voxel_layer ${PROJECT_NAME}_gencfg)
 target_link_libraries(nonpersistent_voxel_layer ${catkin_LIBRARIES})
 
 install(TARGETS
