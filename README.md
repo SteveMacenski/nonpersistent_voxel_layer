@@ -7,4 +7,4 @@ Created in response to need for a rolling local costmap layer to not persist rea
 
 I chose not to modify the ROS navigation voxel layer directly since development has moved to Lunar and my stacks are still on Kinetic.
 
-Build and tested on ROS1 Kinetic.
+Build and tested on ROS1 Kinetic, verified working in Indigo.
