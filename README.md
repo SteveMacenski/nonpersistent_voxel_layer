@@ -32,7 +32,7 @@ nonpersisting_obstacle_layer:
 ### in list of plugins for local/global
 ```
 plugins:
- - {name: nonpersisting_obstacle_layer, type: "costmap_2d::NonpersistentVoxelLayer"}
+ - {name: nonpersisting_obstacle_layer, type: "costmap_2d::NonPersistentVoxelLayer"}
 ```
 
 ## parameters 
