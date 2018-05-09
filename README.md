@@ -4,3 +4,11 @@ ROS drop in replacement to the voxel layer which does not persist readings throu
 Created in response to need for a rolling local costmap layer to not persist readings due to a specific sensor being used. After looking through the community, it seems several people on ros answers have asked for a similar tool. This is to make that possible. This also helps with sensors like sonars, blob marking, radars, etc that aren't dense enough to clear effectively.  
 
 Build and tested on ROS1 Kinetic, verified working in Indigo and Melodic
+
+## Example Use
+
+In costmaps add 
+```- {name: rgbd_obstacle_layer, type: "costmap_2d/NonpersistentVoxelLayer"}```
+
+## parameters 
+Parameters as the same as found in the voxel layer, except the clearing bits. See the Voxel Layer API. 
