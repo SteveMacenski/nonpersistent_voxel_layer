@@ -7,8 +7,30 @@ Build and tested on ROS1 Kinetic, verified working in Indigo and Melodic
 
 ## Example Use
 
-In costmaps add 
-```- {name: rgbd_obstacle_layer, type: "costmap_2d/NonpersistentVoxelLayer"}```
+### in costmap commons
+nonpersisting_obstacle_layer:
+  enabled:              true
+  track_unknown_space:  true
+  max_obstacle_height:  1.8
+  unknown_threshold:    15
+  mark_threshold:       2
+  combination_method:   1
+  obstacle_range: 3.0
+  origin_z: 0.
+  z_resolution: 0.05
+  z_voxels: 16
+  publish_voxel_map: true
+  observation_sources: rgbd
+  rgbd:
+    data_type: PointCloud2
+    topic: camera/depth/points
+    marking: true
+    min_obstacle_height: 0.7
+    max_obstacle_height: 1.7
+
+### in list of plugins for local/global
+plugins:
+ - {name: nonpersisting_obstacle_layer, type: "costmap_2d/NonpersistentVoxelLayer"}
 
 ## parameters 
-Parameters as the same as found in the voxel layer, except the clearing bits. See the Voxel Layer API. 
+Parameters as the same as found in the voxel layer, except the clearing bits. See the Voxel Layer API. The above example is a good minimum working example
