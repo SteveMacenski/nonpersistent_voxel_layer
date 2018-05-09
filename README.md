@@ -8,6 +8,7 @@ Build and tested on ROS1 Kinetic, verified working in Indigo and Melodic
 ## Example Use
 
 ### in costmap commons
+```
 nonpersisting_obstacle_layer:
   enabled:              true
   track_unknown_space:  true
@@ -27,10 +28,12 @@ nonpersisting_obstacle_layer:
     marking: true
     min_obstacle_height: 0.7
     max_obstacle_height: 1.7
-
+```
 ### in list of plugins for local/global
+```
 plugins:
  - {name: nonpersisting_obstacle_layer, type: "costmap_2d/NonpersistentVoxelLayer"}
+```
 
 ## parameters 
 Parameters as the same as found in the voxel layer, except the clearing bits. See the Voxel Layer API. The above example is a good minimum working example
