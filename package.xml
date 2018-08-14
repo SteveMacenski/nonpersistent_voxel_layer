@@ -1,13 +1,10 @@
 <package>
     <name>nonpersistent_voxel_layer</name>
-    <version>1.14.2</version>
+    <version>1.1.2</version>
     <description>include
         This package provides an implementation of a 3D costmap that takes in sensor
         data from the world, builds a 3D occupancy grid of the data for only one iteration.
     </description>
-    <author>Eitan Marder-Eppstein</author>
-    <author>David V. Lu!!</author>
-    <author>Dave Hershberger</author>
     <author>Steven Macenski</author>
     <author>stevenmacenski@gmail.com</author>
     <maintainer email="stevenmacenski@gmail.com">Steven Macenski</maintainer>
