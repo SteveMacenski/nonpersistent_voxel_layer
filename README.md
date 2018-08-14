@@ -5,6 +5,8 @@ Created in response to need for a rolling local costmap layer to not persist rea
 
 Build and tested on ROS1 Kinetic, verified working in Indigo and Melodic
 
+http://wiki.ros.org/nonpersistent_voxel_grid
+
 ## Example Use
 
 ### in costmap commons
