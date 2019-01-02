@@ -59,6 +59,7 @@ void NonPersistentVoxelLayer::onInitialize()
   ros::NodeHandle private_nh("~/" + name_);
 
   private_nh.param("publish_voxel_map", publish_voxel_, false);
+  private_nh.param("footprint_clearing_enabled", footprint_clearing_enabled_, true);
   if (publish_voxel_)
     voxel_pub_ = private_nh.advertise < costmap_2d::VoxelGrid > ("voxel_grid", 1);
 }
@@ -89,6 +90,22 @@ void NonPersistentVoxelLayer::reconfigureCB(costmap_2d::NonPersistentVoxelPlugin
   combination_method_ = config.combination_method;
   matchSize();
 }
+
+void NonPersistentVoxelLayer::updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
+                                    double* max_x, double* max_y)
+{
+  if (!footprint_clearing_enabled_)
+    return;
+  transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
+
+  for (unsigned int i = 0; i < transformed_footprint_.size(); i++)
+  {
+    touch(transformed_footprint_[i].x, transformed_footprint_[i].y, min_x, min_y, max_x, max_y);
+  }
+
+  setConvexPolygonCost(transformed_footprint_, costmap_2d::FREE_SPACE);
+}
+
 
 void NonPersistentVoxelLayer::matchSize()
 {
