@@ -87,6 +87,8 @@ public:
 protected:
   virtual void setupDynamicReconfigure(ros::NodeHandle& nh);
   virtual void resetMaps();
+  void updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
+                                    double* max_x, double* max_y);
 
 private:
   void reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level);
