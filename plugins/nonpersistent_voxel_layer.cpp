@@ -160,7 +160,14 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
   {
     const Observation& obs = *it;
 
-    const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
+    #if ROS_VERSION_MINIMUM(1,14,0)
+      // >= Melodic
+      pcl::PointCloud<pcl::PointXYZ> cloud;
+      pcl::fromROSMsg(*obs.cloud_, cloud);
+    #else
+      // < Melodic
+      const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
+    #endif
 
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
