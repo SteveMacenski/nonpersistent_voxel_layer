@@ -2,7 +2,7 @@ sudo: required
 dist: trusty
 language: generic
 env:
-  - ROS_DISTRO="indigo"
+  - ROS_DISTRO="indigo" 
   - ROS_DISTRO="kinetic"
   - ROS_DISTRO="melodic"
 install:
