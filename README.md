@@ -18,6 +18,7 @@ http://wiki.ros.org/nonpersistent_voxel_grid
 
 ## Example Use
 
+
 ### in costmap commons
 ```
 nonpersisting_obstacle_layer:
