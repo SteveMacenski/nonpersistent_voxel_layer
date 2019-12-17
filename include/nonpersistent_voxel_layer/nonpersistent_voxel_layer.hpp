@@ -36,8 +36,9 @@
  *         David V. Lu!!
  *         Steve Macenski
  *********************************************************************/
-#ifndef COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
-#define COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
+
+#ifndef NONPERSISTENT_VOXEL_LAYER__NONPERSISTENT_VOXEL_LAYER_HPP_
+#define NONPERSISTENT_VOXEL_LAYER__NONPERSISTENT_VOXEL_LAYER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_costmap_2d/layer.hpp"
@@ -71,7 +72,8 @@ public:
   virtual ~NonPersistentVoxelLayer();
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x, double * min_y,
+  virtual void updateBounds(
+    double robot_x, double robot_y, double robot_yaw, double * min_x, double * min_y,
     double * max_x, double * max_y);
 
   void updateOrigin(double new_origin_x, double new_origin_y);
@@ -82,11 +84,11 @@ public:
   virtual void matchSize();
   virtual void reset();
 
-
 protected:
   virtual void resetMaps();
-  void updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-    double* max_x, double* max_y);
+  void updateFootprint(
+    double robot_x, double robot_y, double robot_yaw, double * min_x, double * min_y,
+    double * max_x, double * max_y);
 
 private:
   bool publish_voxel_;
@@ -95,7 +97,8 @@ private:
   double z_resolution_, origin_z_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
 
-  inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz)
+  inline bool worldToMap3DFloat(
+    double wx, double wy, double wz, double & mx, double & my, double & mz)
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
@@ -110,15 +113,16 @@ private:
     return false;
   }
 
-  inline bool worldToMap3D(double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz)
+  inline bool worldToMap3D(
+    double wx, double wy, double wz, unsigned int & mx, unsigned int & my, unsigned int & mz)
   {
     if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
     }
 
-    mx = (int)((wx - origin_x_) / resolution_);
-    my = (int)((wy - origin_y_) / resolution_);
-    mz = (int)((wz - origin_z_) / z_resolution_);
+    mx = static_cast<int>((wx - origin_x_) / resolution_);
+    my = static_cast<int>((wy - origin_y_) / resolution_);
+    mz = static_cast<int>((wz - origin_z_) / z_resolution_);
 
     if (mx < size_x_ && my < size_y_ && mz < size_z_) {
       return true;
@@ -127,7 +131,8 @@ private:
     return false;
   }
 
-  inline void mapToWorld3D(unsigned int mx, unsigned int my, unsigned int mz, double& wx, double& wy, double& wz)
+  inline void mapToWorld3D(
+    unsigned int mx, unsigned int my, unsigned int mz, double & wx, double & wy, double & wz)
   {
     // returns the center point of the cell
     wx = origin_x_ + (mx + 0.5) * resolution_;
@@ -141,6 +146,6 @@ private:
   }
 };
 
-}  // namespace costmap_2d
+}  // namespace nav2_costmap_2d
 
-#endif // COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
+#endif  // NONPERSISTENT_VOXEL_LAYER__NONPERSISTENT_VOXEL_LAYER_HPP_

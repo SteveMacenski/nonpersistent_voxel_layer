@@ -37,6 +37,7 @@
  *         Steve Macenski
  *********************************************************************/
 
+#include <vector>
 #include "nonpersistent_voxel_layer/nonpersistent_voxel_layer.hpp"
 
 #define VOXEL_BITS 16
@@ -54,14 +55,32 @@ namespace nav2_costmap_2d
 void NonPersistentVoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
-  publish_voxel_ = node_->declare_parameter(
-    name_ + ".publish_voxel_map", false);
   footprint_clearing_enabled_ = node_->get_parameter(
     name_ + ".footprint_clearing_enabled").as_bool();
+  enabled_ = node_->get_parameter(name_ + ".enabled").as_bool();
+  max_obstacle_height_ = node_->get_parameter(
+    name_ + ".max_obstacle_height").as_double();
+  combination_method_ = node_->get_parameter(
+    name_ + ".combination_method").as_int();
+
+  size_z_ = node_->declare_parameter(name_ + ".z_voxels", 16);
+  origin_z_ = node_->declare_parameter(name_ + ".origin_z", 16.0);
+  z_resolution_ = node_->declare_parameter(
+    name_ + ".z_resolution", 0.05);
+  unknown_threshold_ = node_->declare_parameter(
+    name_ + ".unknown_threshold", 15) + (VOXEL_BITS - size_z_);
+  mark_threshold_ = node_->declare_parameter(
+    name_ + ".mark_threshold", 0);
+  publish_voxel_ = node_->declare_parameter(
+    name_ + ".publish_voxel_map", false);
+
   if (publish_voxel_) {
-    voxel_pub_ = rclcpp_node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
+    voxel_pub_ =
+      rclcpp_node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
       "voxel_grid", rclcpp::QoS(1));
   }
+
+  matchSize();
 }
 
 NonPersistentVoxelLayer::~NonPersistentVoxelLayer()
@@ -70,7 +89,7 @@ NonPersistentVoxelLayer::~NonPersistentVoxelLayer()
 
 void NonPersistentVoxelLayer::updateFootprint(
   double robot_x, double robot_y, double robot_yaw,
-  double* min_x, double* min_y, double* max_x, double* max_y)
+  double * min_x, double * min_y, double * max_x, double * max_y)
 {
   if (!footprint_clearing_enabled_) {
     return;
@@ -139,23 +158,26 @@ void NonPersistentVoxelLayer::updateBounds(
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
   for (std::vector<Observation>::const_iterator it = observations.begin();
-    it != observations.end(); ++it) {
-    const Observation& obs = *it;
+    it != observations.end(); ++it)
+  {
+    const Observation & obs = *it;
 
     pcl::PointCloud<pcl::PointXYZ> cloud;
     pcl::fromROSMsg(*obs.cloud_, cloud);
+    auto & pts = cloud.points;
 
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
     for (unsigned int i = 0; i < cloud.points.size(); ++i) {
       // if the obstacle is too high or too far away from the robot we won't add it
-      if (cloud.points[i].z > max_obstacle_height_)
+      if (cloud.points[i].z > max_obstacle_height_) {
         continue;
+      }
 
       // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
-          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
-          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
+      double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x) +
+        (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y) +
+        (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
       if (sq_dist >= sq_obstacle_range) {
@@ -168,8 +190,7 @@ void NonPersistentVoxelLayer::updateBounds(
         if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz)) {
           continue;
         }
-      }
-      else if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, mx, my, mz)) {
+      } else if (!worldToMap3D(pts[i].x, pts[i].y, pts[i].z, mx, my, mz)) {
         continue;
       }
 
@@ -178,7 +199,8 @@ void NonPersistentVoxelLayer::updateBounds(
         unsigned int index = getIndex(mx, my);
 
         costmap_[index] = LETHAL_OBSTACLE;
-        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+        touch(static_cast<double>(cloud.points[i].x),
+          static_cast<double>(cloud.points[i].y), min_x, min_y, max_x, max_y);
       }
     }
   }
@@ -212,15 +234,15 @@ void NonPersistentVoxelLayer::updateOrigin(
 {
   // project the new origin into the grid
   int cell_ox, cell_oy;
-  cell_ox = int((new_origin_x - origin_x_) / resolution_);
-  cell_oy = int((new_origin_y - origin_y_) / resolution_);
+  cell_ox = static_cast<int>((new_origin_x - origin_x_) / resolution_);
+  cell_oy = static_cast<int>((new_origin_y - origin_y_) / resolution_);
 
   // update the origin with the appropriate world coordinates
   origin_x_ = origin_x_ + cell_ox * resolution_;
   origin_y_ = origin_y_ + cell_oy * resolution_;
 }
 
-} // namespace nav2_costmap_2d
+}  // namespace nav2_costmap_2d
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::NonPersistentVoxelLayer,
