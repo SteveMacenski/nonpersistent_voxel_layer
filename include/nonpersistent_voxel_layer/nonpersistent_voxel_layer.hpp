@@ -39,32 +39,31 @@
 #ifndef COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
 #define COSTMAP_2D_NONPERSISTENT_VOXEL_LAYER_H_
 
-#include <ros/ros.h>
-#include <costmap_2d/layer.h>
-#include <costmap_2d/layered_costmap.h>
-#include <costmap_2d/observation_buffer.h>
-#include <costmap_2d/VoxelGrid.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <sensor_msgs/LaserScan.h>
-#include <laser_geometry/laser_geometry.h>
-#include <sensor_msgs/PointCloud.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <tf/message_filter.h>
-#include <message_filters/subscriber.h>
-#include <dynamic_reconfigure/server.h>
-#include <nonpersistent_voxel_layer/NonPersistentVoxelPluginConfig.h>
-#include <costmap_2d/obstacle_layer.h>
-#include <voxel_grid/voxel_grid.h>
+#include "rclcpp/rclcpp.hpp"
+#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/layered_costmap.hpp"
+#include "nav2_costmap_2d/observation_buffer.hpp"
+#include "nav2_voxel_grid/voxel_grid.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "laser_geometry/laser_geometry.hpp"
+#include "sensor_msgs/msg/point_cloud.hpp"
+#include "sensor_msgs/msg/point_cloud2.h"
+#include "sensor_msgs/point_cloud_conversion.hpp"
+#include "tf2_ros/message_filter.h"
+#include "message_filters/subscriber.h"
+#include "nav2_costmap_2d/obstacle_layer.hpp"
+#include "nav2_msgs/msg/voxel_grid.hpp"
+#include "pcl_conversions/pcl_conversions.h"
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 class NonPersistentVoxelLayer : public ObstacleLayer
 {
 public:
-  NonPersistentVoxelLayer() :
-      voxel_grid_(0, 0, 0)
+  NonPersistentVoxelLayer()
+  : voxel_grid_(0, 0, 0)
   {
     costmap_ = NULL;  // this is the unsigned char* member of parent class's parent class Costmap2D.
   }
@@ -72,8 +71,8 @@ public:
   virtual ~NonPersistentVoxelLayer();
 
   virtual void onInitialize();
-  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-                            double* max_x, double* max_y);
+  virtual void updateBounds(double robot_x, double robot_y, double robot_yaw, double * min_x, double * min_y,
+    double * max_x, double * max_y);
 
   void updateOrigin(double new_origin_x, double new_origin_y);
   bool isDiscretized()
@@ -85,46 +84,45 @@ public:
 
 
 protected:
-  virtual void setupDynamicReconfigure(ros::NodeHandle& nh);
   virtual void resetMaps();
   void updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-                                    double* max_x, double* max_y);
+    double* max_x, double* max_y);
 
 private:
-  void reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level);
-
-  dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig> *voxel_dsrv_;
-
   bool publish_voxel_;
-  ros::Publisher voxel_pub_;
-  voxel_grid::VoxelGrid voxel_grid_;
+  rclcpp::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
+  nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
 
   inline bool worldToMap3DFloat(double wx, double wy, double wz, double& mx, double& my, double& mz)
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
+    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
+    }
     mx = ((wx - origin_x_) / resolution_);
     my = ((wy - origin_y_) / resolution_);
     mz = ((wz - origin_z_) / z_resolution_);
-    if (mx < size_x_ && my < size_y_ && mz < size_z_)
+    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
       return true;
+    }
 
     return false;
   }
 
   inline bool worldToMap3D(double wx, double wy, double wz, unsigned int& mx, unsigned int& my, unsigned int& mz)
   {
-    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_)
+    if (wx < origin_x_ || wy < origin_y_ || wz < origin_z_) {
       return false;
+    }
 
     mx = (int)((wx - origin_x_) / resolution_);
     my = (int)((wy - origin_y_) / resolution_);
     mz = (int)((wz - origin_z_) / z_resolution_);
 
-    if (mx < size_x_ && my < size_y_ && mz < size_z_)
+    if (mx < size_x_ && my < size_y_ && mz < size_z_) {
       return true;
+    }
 
     return false;
   }

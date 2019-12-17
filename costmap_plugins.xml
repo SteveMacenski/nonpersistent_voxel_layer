@@ -1,7 +1,5 @@
-<class_libraries>
-  <library path="lib/libnonpersistent_voxel_layer">
-    <class type="costmap_2d::NonPersistentVoxelLayer"     base_class_type="costmap_2d::Layer">
-      <description>Similar to voxel costmap, but 3D stored data is not saved between iterations.</description>
-    </class>
-  </library>
-</class_libraries>
+<library path="nonpersistent_voxel_layer_core">
+	<class name="nav2_costmap_2d/NonPersistentVoxelLayer" type="nav2_costmap_2d::NonPersistentVoxelLayer" base_class_type="nav2_costmap_2d::Layer">
+		<description>Similar to voxel costmap, but 3D stored data is not saved between iterations.</description>
+	</class>
+</library>

@@ -36,74 +36,55 @@
  *         David V. Lu!!
  *         Steve Macenski
  *********************************************************************/
-#include <nonpersistent_voxel_layer/nonpersistent_voxel_layer.hpp>
-#include <pluginlib/class_list_macros.h>
-#include <pcl_conversions/pcl_conversions.h>
+
+#include "nonpersistent_voxel_layer/nonpersistent_voxel_layer.hpp"
 
 #define VOXEL_BITS 16
-PLUGINLIB_EXPORT_CLASS(costmap_2d::NonPersistentVoxelLayer, costmap_2d::Layer)
 
-using costmap_2d::NO_INFORMATION;
-using costmap_2d::LETHAL_OBSTACLE;
-using costmap_2d::FREE_SPACE;
+using nav2_costmap_2d::NO_INFORMATION;
+using nav2_costmap_2d::LETHAL_OBSTACLE;
+using nav2_costmap_2d::FREE_SPACE;
 
-using costmap_2d::ObservationBuffer;
-using costmap_2d::Observation;
+using nav2_costmap_2d::ObservationBuffer;
+using nav2_costmap_2d::Observation;
 
-namespace costmap_2d
+namespace nav2_costmap_2d
 {
 
 void NonPersistentVoxelLayer::onInitialize()
 {
   ObstacleLayer::onInitialize();
-  ros::NodeHandle private_nh("~/" + name_);
-
-  private_nh.param("publish_voxel_map", publish_voxel_, false);
-  private_nh.param("footprint_clearing_enabled", footprint_clearing_enabled_, true);
-  if (publish_voxel_)
-    voxel_pub_ = private_nh.advertise < costmap_2d::VoxelGrid > ("voxel_grid", 1);
-}
-
-void NonPersistentVoxelLayer::setupDynamicReconfigure(ros::NodeHandle& nh)
-{
-  voxel_dsrv_ = new dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig>(nh);
-  dynamic_reconfigure::Server<costmap_2d::NonPersistentVoxelPluginConfig>::CallbackType cb = boost::bind(
-      &NonPersistentVoxelLayer::reconfigureCB, this, _1, _2);
-  voxel_dsrv_->setCallback(cb);
+  publish_voxel_ = node_->declare_parameter(
+    name_ + ".publish_voxel_map", false);
+  footprint_clearing_enabled_ = node_->declare_parameter(
+    name_ + ".footprint_clearing_enabled", true);
+  if (publish_voxel_) {
+    voxel_pub_ = rclcpp_node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
+      "voxel_grid", rclcpp::QoS(1));
+  }
 }
 
 NonPersistentVoxelLayer::~NonPersistentVoxelLayer()
 {
-  if (voxel_dsrv_)
-    delete voxel_dsrv_;
 }
 
-void NonPersistentVoxelLayer::reconfigureCB(costmap_2d::NonPersistentVoxelPluginConfig &config, uint32_t level)
+void NonPersistentVoxelLayer::updateFootprint(
+  double robot_x, double robot_y, double robot_yaw,
+  double* min_x, double* min_y, double* max_x, double* max_y)
 {
-  enabled_ = config.enabled;
-  max_obstacle_height_ = config.max_obstacle_height;
-  size_z_ = config.z_voxels;
-  origin_z_ = config.origin_z;
-  z_resolution_ = config.z_resolution;
-  unknown_threshold_ = config.unknown_threshold + (VOXEL_BITS - size_z_);
-  mark_threshold_ = config.mark_threshold;
-  combination_method_ = config.combination_method;
-  matchSize();
-}
-
-void NonPersistentVoxelLayer::updateFootprint(double robot_x, double robot_y, double robot_yaw, double* min_x, double* min_y,
-                                    double* max_x, double* max_y)
-{
-  if (!footprint_clearing_enabled_)
+  if (!footprint_clearing_enabled_) {
     return;
-  transformFootprint(robot_x, robot_y, robot_yaw, getFootprint(), transformed_footprint_);
-
-  for (unsigned int i = 0; i < transformed_footprint_.size(); i++)
-  {
-    touch(transformed_footprint_[i].x, transformed_footprint_[i].y, min_x, min_y, max_x, max_y);
   }
 
-  setConvexPolygonCost(transformed_footprint_, costmap_2d::FREE_SPACE);
+  transformFootprint(robot_x, robot_y, robot_yaw,
+    getFootprint(), transformed_footprint_);
+
+  for (unsigned int i = 0; i < transformed_footprint_.size(); i++) {
+    touch(transformed_footprint_[i].x, transformed_footprint_[i].y,
+      min_x, min_y, max_x, max_y);
+  }
+
+  setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
 }
 
 
@@ -111,7 +92,6 @@ void NonPersistentVoxelLayer::matchSize()
 {
   ObstacleLayer::matchSize();
   voxel_grid_.resize(size_x_, size_y_, size_z_);
-  ROS_ASSERT(voxel_grid_.sizeX() == size_x_ && voxel_grid_.sizeY() == size_y_);
 }
 
 void NonPersistentVoxelLayer::reset()
@@ -128,21 +108,23 @@ void NonPersistentVoxelLayer::resetMaps()
   voxel_grid_.reset();
 }
 
-void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, double robot_yaw, double* min_x,
-                                       double* min_y, double* max_x, double* max_y)
+void NonPersistentVoxelLayer::updateBounds(
+  double robot_x, double robot_y, double robot_yaw,
+  double * min_x, double * min_y, double * max_x, double * max_y)
 {
   // update origin information for rolling costmap publication
-  if (rolling_window_)
-  {
-    updateOrigin(robot_x - getSizeInMetersX() / 2, robot_y - getSizeInMetersY() / 2);
+  if (rolling_window_) {
+    updateOrigin(robot_x - getSizeInMetersX() / 2,
+      robot_y - getSizeInMetersY() / 2);
   }
 
   // reset maps each iteration
   resetMaps();
 
   // if not enabled, stop here
-  if (!enabled_)
+  if (!enabled_) {
     return;
+  }
 
   // get the maximum sized window required to operate
   useExtraBounds(min_x, min_y, max_x, max_y);
@@ -156,23 +138,16 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
   current_ = current;
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
-  for (std::vector<Observation>::const_iterator it = observations.begin(); it != observations.end(); ++it)
-  {
+  for (std::vector<Observation>::const_iterator it = observations.begin();
+    it != observations.end(); ++it) {
     const Observation& obs = *it;
 
-    #if ROS_VERSION_MINIMUM(1,14,0)
-      // >= Melodic
-      pcl::PointCloud<pcl::PointXYZ> cloud;
-      pcl::fromROSMsg(*obs.cloud_, cloud);
-    #else
-      // < Melodic
-      const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
-    #endif
+    pcl::PointCloud<pcl::PointXYZ> cloud;
+    pcl::fromROSMsg(*obs.cloud_, cloud);
 
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
-    for (unsigned int i = 0; i < cloud.points.size(); ++i)
-    {
+    for (unsigned int i = 0; i < cloud.points.size(); ++i) {
       // if the obstacle is too high or too far away from the robot we won't add it
       if (cloud.points[i].z > max_obstacle_height_)
         continue;
@@ -183,24 +158,23 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
           + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_range)
+      if (sq_dist >= sq_obstacle_range) {
         continue;
+      }
 
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my, mz;
-      if (cloud.points[i].z < origin_z_)
-      {
-        if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz))
+      if (cloud.points[i].z < origin_z_) {
+        if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz)) {
           continue;
+        }
       }
-      else if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, mx, my, mz))
-      {
+      else if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, mx, my, mz)) {
         continue;
       }
 
       // mark the cell in the voxel grid and check if we should also mark it in the costmap
-      if (voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_))
-      {
+      if (voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_)) {
         unsigned int index = getIndex(mx, my);
 
         costmap_[index] = LETHAL_OBSTACLE;
@@ -209,9 +183,8 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
     }
   }
 
-  if (publish_voxel_)
-  {
-    costmap_2d::VoxelGrid grid_msg;
+  if (publish_voxel_) {
+    nav2_msgs::msg::VoxelGrid grid_msg;
     unsigned int size = voxel_grid_.sizeX() * voxel_grid_.sizeY();
     grid_msg.size_x = voxel_grid_.sizeX();
     grid_msg.size_y = voxel_grid_.sizeY();
@@ -227,14 +200,15 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
     grid_msg.resolutions.y = resolution_;
     grid_msg.resolutions.z = z_resolution_;
     grid_msg.header.frame_id = global_frame_;
-    grid_msg.header.stamp = ros::Time::now();
-    voxel_pub_.publish(grid_msg);
+    grid_msg.header.stamp = node_->now();
+    voxel_pub_->publish(grid_msg);
   }
 
   updateFootprint(robot_x, robot_y, robot_yaw, min_x, min_y, max_x, max_y);
 }
 
-void NonPersistentVoxelLayer::updateOrigin(double new_origin_x, double new_origin_y)
+void NonPersistentVoxelLayer::updateOrigin(
+  double new_origin_x, double new_origin_y)
 {
   // project the new origin into the grid
   int cell_ox, cell_oy;
@@ -246,4 +220,8 @@ void NonPersistentVoxelLayer::updateOrigin(double new_origin_x, double new_origi
   origin_y_ = origin_y_ + cell_oy * resolution_;
 }
 
-} // namespace costmap_2d
+} // namespace nav2_costmap_2d
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::NonPersistentVoxelLayer,
+  nav2_costmap_2d::Layer)

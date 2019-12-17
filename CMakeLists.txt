@@ -1,91 +1,113 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(nonpersistent_voxel_layer)
 
-find_package(catkin REQUIRED
-        COMPONENTS
-            cmake_modules
-            dynamic_reconfigure
-            geometry_msgs
-            laser_geometry
-            map_msgs
-            message_filters
-            message_generation
-            nav_msgs
-            pcl_conversions
-            pcl_ros
-            pluginlib
-            roscpp
-            sensor_msgs
-            std_msgs
-            tf
-            visualization_msgs
-            voxel_grid
-            costmap_2d
-        )
+if(NOT WIN32)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+endif()
 
-find_package(PCL REQUIRED)
-remove_definitions(-DDISABLE_LIBUSB-1.0)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(laser_geometry REQUIRED)
+find_package(map_msgs REQUIRED)
+find_package(message_filters REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(nav2_voxel_grid REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system thread)
-include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIRS}
-    ${PCL_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-)
+
+find_package(PCL REQUIRED COMPONENTS filters common)
+if(NOT "${PCL_LIBRARIES}" STREQUAL "")
+  # This package fails to build on Debian Stretch with a linking error against
+  # 'Qt5::Widgets'.  This is a transitive dependency that comes in to PCL via
+  # the PCL dependency on VTK.  However, we don't actually care about the Qt
+  # dependencies for this package, so just remove them.  This is similar to the
+  # workaround in https://github.com/ros-perception/perception_pcl/pull/151,
+  # and can be removed when Stretch goes out of support.
+  list(REMOVE_ITEM PCL_LIBRARIES
+    "vtkGUISupportQt"
+    "vtkGUISupportQtOpenGL"
+    "vtkGUISupportQtSQL"
+    "vtkGUISupportQtWebkit"
+    "vtkViewsQt"
+    "vtkRenderingQt")
+endif()
+
+set(dependencies
+	geometry_msgs
+	laser_geometry
+	map_msgs
+	message_filters
+	nav_msgs
+	pcl_conversions
+	pluginlib
+	sensor_msgs
+  nav2_msgs
+	rclcpp
+	std_msgs
+	tf2
+	tf2_ros
+	visualization_msgs
+	nav2_voxel_grid
+	nav2_costmap_2d)
+
+set(library_name nonpersistent_voxel_layer_core)
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
-# dynamic reconfigure
-generate_dynamic_reconfigure_options(
-  cfg/NonPersistentVoxelPlugin.cfg
+include_directories(
+    include
+    ${PCL_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
 )
 
-catkin_package(
-    INCLUDE_DIRS
-        include
-    LIBRARIES nonpersistent_voxel_layer
-    CATKIN_DEPENDS
-        dynamic_reconfigure
-        geometry_msgs
-        laser_geometry
-        map_msgs
-        costmap_2d
-        message_filters
-        message_runtime
-        nav_msgs
-        pcl_ros
-        pluginlib
-        roscpp
-        sensor_msgs
-        std_msgs
-        tf
-        visualization_msgs
-        voxel_grid
-    DEPENDS
-        PCL
-        EIGEN3
-        Boost
+add_library(${library_name} SHARED
+	plugins/nonpersistent_voxel_layer.cpp
 )
 
-add_library(nonpersistent_voxel_layer
-  plugins/nonpersistent_voxel_layer.cpp
+target_link_libraries(${library_name}
+  ${PCL_LIBRARIES}
+  ${EIGEN3_LIBRARIES}
 )
-add_dependencies(nonpersistent_voxel_layer ${PROJECT_NAME}_gencfg)
-target_link_libraries(nonpersistent_voxel_layer ${catkin_LIBRARIES})
 
-install(TARGETS
-    nonpersistent_voxel_layer
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+install(TARGETS ${library_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY example
+  DESTINATION share
 )
 
 install(FILES costmap_plugins.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DESTINATION share
 )
 
-install(DIRECTORY include/nonpersistent_voxel_layer/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  PATTERN ".svn" EXCLUDE
-)
+pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+ament_package()
