@@ -35,7 +35,7 @@
     <depend>libpcl-all</depend>
 
   <export>
-    <costmap_2d plugin="${prefix}/costmap_plugins.xml" />
+    <nav2_costmap_2d plugin="${prefix}/costmap_plugins.xml" />
     <build_type>ament_cmake</build_type>
   </export>
 </package>

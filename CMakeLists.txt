@@ -77,12 +77,12 @@ add_library(${library_name} SHARED
 	plugins/nonpersistent_voxel_layer.cpp
 )
 
+target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
+
 target_link_libraries(${library_name}
   ${PCL_LIBRARIES}
   ${EIGEN3_LIBRARIES}
 )
-
-target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -96,7 +96,7 @@ endif()
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION lib
 )
 
 install(DIRECTORY example
@@ -107,7 +107,8 @@ install(FILES costmap_plugins.xml
   DESTINATION share
 )
 
-pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
+ament_export_libraries(${library_name})
+ament_export_dependencies(${dependencies})
+pluginlib_export_plugin_description_file(nav2_costmap_2d costmap_plugins.xml)
 ament_package()

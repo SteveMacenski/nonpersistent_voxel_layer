@@ -48,7 +48,7 @@ http://wiki.ros.org/nonpersistent_voxel_grid
         ros__parameters:
           use_sim_time: True
           plugin_names: ["static_layer", "nonpersisting_obstacle_layer"]
-          plugin_types: ["nav2_costmap_2d::StaticLayer", "costmap_2d::NonPersistentVoxelLayer"]
+          plugin_types: ["nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::NonPersistentVoxelLayer"]
 ```
 
 ## parameters 

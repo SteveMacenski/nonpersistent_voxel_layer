@@ -56,8 +56,8 @@ void NonPersistentVoxelLayer::onInitialize()
   ObstacleLayer::onInitialize();
   publish_voxel_ = node_->declare_parameter(
     name_ + ".publish_voxel_map", false);
-  footprint_clearing_enabled_ = node_->declare_parameter(
-    name_ + ".footprint_clearing_enabled", true);
+  footprint_clearing_enabled_ = node_->get_parameter(
+    name_ + ".footprint_clearing_enabled").as_bool();
   if (publish_voxel_) {
     voxel_pub_ = rclcpp_node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
       "voxel_grid", rclcpp::QoS(1));
