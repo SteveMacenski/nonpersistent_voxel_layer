@@ -32,6 +32,8 @@
     <depend>nav2_costmap_2d</depend>
     <depend>libpcl-all</depend>
 
+    <test_depend>ament_lint_auto</test_depend>
+
   <export>
     <nav2_costmap_2d plugin="${prefix}/costmap_plugins.xml" />
     <build_type>ament_cmake</build_type>
