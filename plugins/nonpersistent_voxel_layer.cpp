@@ -38,7 +38,7 @@
  *********************************************************************/
 #include <nonpersistent_voxel_layer/nonpersistent_voxel_layer.hpp>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_conversions/pcl_conversions.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 #define VOXEL_BITS 16
 PLUGINLIB_EXPORT_CLASS(costmap_2d::NonPersistentVoxelLayer, costmap_2d::Layer)
@@ -160,27 +160,21 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
   {
     const Observation& obs = *it;
 
-    #if ROS_VERSION_MINIMUM(1,14,0)
-      // >= Melodic
-      pcl::PointCloud<pcl::PointXYZ> cloud;
-      pcl::fromROSMsg(*obs.cloud_, cloud);
-    #else
-      // < Melodic
-      const pcl::PointCloud<pcl::PointXYZ>& cloud = *(obs.cloud_);
-    #endif
-
     double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
 
-    for (unsigned int i = 0; i < cloud.points.size(); ++i)
+    sensor_msgs::PointCloud2ConstIterator<float> it_x(*obs.cloud_, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> it_y(*obs.cloud_, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> it_z(*obs.cloud_, "z");
+    for (; it_x != it_x.end(); ++it_x, ++it_y, ++it_z)
     {
       // if the obstacle is too high or too far away from the robot we won't add it
-      if (cloud.points[i].z > max_obstacle_height_)
+      if (*it_z > max_obstacle_height_)
         continue;
 
       // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist = (cloud.points[i].x - obs.origin_.x) * (cloud.points[i].x - obs.origin_.x)
-          + (cloud.points[i].y - obs.origin_.y) * (cloud.points[i].y - obs.origin_.y)
-          + (cloud.points[i].z - obs.origin_.z) * (cloud.points[i].z - obs.origin_.z);
+      double sq_dist = (*it_x - obs.origin_.x) * (*it_x - obs.origin_.x)
+          + (*it_y - obs.origin_.y) * (*it_y - obs.origin_.y)
+          + (*it_z - obs.origin_.z) * (*it_z - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
       if (sq_dist >= sq_obstacle_range)
@@ -188,12 +182,12 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
 
       // now we need to compute the map coordinates for the observation
       unsigned int mx, my, mz;
-      if (cloud.points[i].z < origin_z_)
+      if (*it_z < origin_z_)
       {
-        if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, origin_z_, mx, my, mz))
+        if (!worldToMap3D(*it_x, *it_y, origin_z_, mx, my, mz))
           continue;
       }
-      else if (!worldToMap3D(cloud.points[i].x, cloud.points[i].y, cloud.points[i].z, mx, my, mz))
+      else if (!worldToMap3D(*it_x, *it_y, *it_z, mx, my, mz))
       {
         continue;
       }
@@ -204,7 +198,7 @@ void NonPersistentVoxelLayer::updateBounds(double robot_x, double robot_y, doubl
         unsigned int index = getIndex(mx, my);
 
         costmap_[index] = LETHAL_OBSTACLE;
-        touch((double)cloud.points[i].x, (double)cloud.points[i].y, min_x, min_y, max_x, max_y);
+        touch((double)*it_x, (double)*it_y, min_x, min_y, max_x, max_y);
       }
     }
   }
