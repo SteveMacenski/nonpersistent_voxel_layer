@@ -55,7 +55,6 @@
 #include "message_filters/subscriber.h"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
-#include "pcl_conversions/pcl_conversions.h"
 
 namespace nav2_costmap_2d
 {

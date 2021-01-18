@@ -16,7 +16,6 @@ find_package(map_msgs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(pcl_conversions REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -28,30 +27,12 @@ find_package(nav2_voxel_grid REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-find_package(PCL REQUIRED COMPONENTS filters common)
-if(NOT "${PCL_LIBRARIES}" STREQUAL "")
-  # This package fails to build on Debian Stretch with a linking error against
-  # 'Qt5::Widgets'.  This is a transitive dependency that comes in to PCL via
-  # the PCL dependency on VTK.  However, we don't actually care about the Qt
-  # dependencies for this package, so just remove them.  This is similar to the
-  # workaround in https://github.com/ros-perception/perception_pcl/pull/151,
-  # and can be removed when Stretch goes out of support.
-  list(REMOVE_ITEM PCL_LIBRARIES
-    "vtkGUISupportQt"
-    "vtkGUISupportQtOpenGL"
-    "vtkGUISupportQtSQL"
-    "vtkGUISupportQtWebkit"
-    "vtkViewsQt"
-    "vtkRenderingQt")
-endif()
-
 set(dependencies
 	geometry_msgs
 	laser_geometry
 	map_msgs
 	message_filters
 	nav_msgs
-	pcl_conversions
 	pluginlib
 	sensor_msgs
   nav2_msgs
@@ -69,7 +50,6 @@ add_definitions(${EIGEN3_DEFINITIONS})
 
 include_directories(
     include
-    ${PCL_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
 )
 
@@ -80,7 +60,6 @@ add_library(${library_name} SHARED
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 target_link_libraries(${library_name}
-  ${PCL_LIBRARIES}
   ${EIGEN3_LIBRARIES}
 )
 

@@ -20,7 +20,6 @@
     <depend>map_msgs</depend>
     <depend>nav_msgs</depend>
     <depend>nav2_msgs</depend>
-    <depend>pcl_conversions</depend>
     <depend>pluginlib</depend>
     <depend>rclcpp</depend>
     <depend>sensor_msgs</depend>
@@ -30,7 +29,6 @@
     <depend>visualization_msgs</depend>
     <depend>nav2_voxel_grid</depend>
     <depend>nav2_costmap_2d</depend>
-    <depend>libpcl-all</depend>
 
     <test_depend>ament_lint_auto</test_depend>
 
