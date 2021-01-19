@@ -11,8 +11,6 @@ find_package(catkin REQUIRED
             message_filters
             message_generation
             nav_msgs
-            pcl_conversions
-            pcl_ros
             pluginlib
             roscpp
             sensor_msgs
@@ -23,15 +21,12 @@ find_package(catkin REQUIRED
             costmap_2d
         )
 
-find_package(PCL REQUIRED)
-remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
-    ${PCL_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
 )
 
@@ -55,7 +50,6 @@ catkin_package(
         message_filters
         message_runtime
         nav_msgs
-        pcl_ros
         pluginlib
         roscpp
         sensor_msgs
@@ -64,7 +58,6 @@ catkin_package(
         visualization_msgs
         voxel_grid
     DEPENDS
-        PCL
         EIGEN3
         Boost
 )
