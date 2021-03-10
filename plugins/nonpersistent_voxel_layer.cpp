@@ -55,24 +55,26 @@ namespace nav2_costmap_2d
 
 void NonPersistentVoxelLayer::onInitialize()
 {
+  auto node = node_.lock();
+  clock_ = node->get_clock();
   ObstacleLayer::onInitialize();
-  footprint_clearing_enabled_ = node_->get_parameter(
+  footprint_clearing_enabled_ = node->get_parameter(
     name_ + ".footprint_clearing_enabled").as_bool();
-  enabled_ = node_->get_parameter(name_ + ".enabled").as_bool();
-  max_obstacle_height_ = node_->get_parameter(
+  enabled_ = node->get_parameter(name_ + ".enabled").as_bool();
+  max_obstacle_height_ = node->get_parameter(
     name_ + ".max_obstacle_height").as_double();
-  combination_method_ = node_->get_parameter(
+  combination_method_ = node->get_parameter(
     name_ + ".combination_method").as_int();
 
-  size_z_ = node_->declare_parameter(name_ + ".z_voxels", 16);
-  origin_z_ = node_->declare_parameter(name_ + ".origin_z", 16.0);
-  z_resolution_ = node_->declare_parameter(
+  size_z_ = node->declare_parameter(name_ + ".z_voxels", 16);
+  origin_z_ = node->declare_parameter(name_ + ".origin_z", 16.0);
+  z_resolution_ = node->declare_parameter(
     name_ + ".z_resolution", 0.05);
-  unknown_threshold_ = node_->declare_parameter(
+  unknown_threshold_ = node->declare_parameter(
     name_ + ".unknown_threshold", 15) + (VOXEL_BITS - size_z_);
-  mark_threshold_ = node_->declare_parameter(
+  mark_threshold_ = node->declare_parameter(
     name_ + ".mark_threshold", 0);
-  publish_voxel_ = node_->declare_parameter(
+  publish_voxel_ = node->declare_parameter(
     name_ + ".publish_voxel_map", false);
 
   if (publish_voxel_) {
@@ -163,7 +165,7 @@ void NonPersistentVoxelLayer::updateBounds(
   {
     const Observation & obs = *it;
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    double sq_obstacle_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> it_x(*obs.cloud_, "x");
     sensor_msgs::PointCloud2ConstIterator<float> it_y(*obs.cloud_, "y");
@@ -223,7 +225,7 @@ void NonPersistentVoxelLayer::updateBounds(
     grid_msg.resolutions.y = resolution_;
     grid_msg.resolutions.z = z_resolution_;
     grid_msg.header.frame_id = global_frame_;
-    grid_msg.header.stamp = node_->now();
+    grid_msg.header.stamp = clock_->now();
     voxel_pub_->publish(grid_msg);
   }
 

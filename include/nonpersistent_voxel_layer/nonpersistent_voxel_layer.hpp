@@ -50,7 +50,6 @@
 #include "laser_geometry/laser_geometry.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
 #include "sensor_msgs/msg/point_cloud2.h"
-#include "sensor_msgs/point_cloud_conversion.hpp"
 #include "tf2_ros/message_filter.h"
 #include "message_filters/subscriber.h"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
@@ -95,6 +94,7 @@ private:
   nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;
+  rclcpp::Clock::SharedPtr clock_;
 
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my, double & mz)
