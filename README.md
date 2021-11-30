@@ -22,6 +22,7 @@ http://wiki.ros.org/nonpersistent_voxel_grid
       global_costmap:
         ros__parameters:
           nonpersisting_obstacle_layer:
+            plugin: nav2_costmap_2d/NonPersistentVoxelLayer
             enabled:              true
             track_unknown_space:  true
             max_obstacle_height:  1.8
@@ -48,7 +49,6 @@ http://wiki.ros.org/nonpersistent_voxel_grid
         ros__parameters:
           use_sim_time: True
           plugin_names: ["static_layer", "nonpersisting_obstacle_layer"]
-          plugin_types: ["nav2_costmap_2d::StaticLayer", "nav2_costmap_2d::NonPersistentVoxelLayer"]
 ```
 
 ## parameters 
