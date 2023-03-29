@@ -79,7 +79,7 @@ void NonPersistentVoxelLayer::onInitialize()
 
   if (publish_voxel_) {
     voxel_pub_ =
-      rclcpp_node_->create_publisher<nav2_msgs::msg::VoxelGrid>(
+      node->create_publisher<nav2_msgs::msg::VoxelGrid>(
       "voxel_grid", rclcpp::QoS(1));
   }
 
