@@ -118,15 +118,13 @@ void NonPersistentVoxelLayer::matchSize()
 
 void NonPersistentVoxelLayer::reset()
 {
-  deactivate();
+  ObstacleLayer::reset();
   resetMaps();
-  voxel_grid_.reset();
-  activate();
 }
 
 void NonPersistentVoxelLayer::resetMaps()
 {
-  Costmap2D::resetMaps();
+  ObstacleLayer::resetMaps();
   voxel_grid_.reset();
 }
 
