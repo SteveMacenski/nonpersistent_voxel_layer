@@ -45,13 +45,10 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "nav2_costmap_2d/observation_buffer.hpp"
 #include "nav2_voxel_grid/voxel_grid.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "laser_geometry/laser_geometry.hpp"
 #include "sensor_msgs/msg/point_cloud.hpp"
 #include "sensor_msgs/msg/point_cloud2.h"
-#include "tf2_ros/message_filter.h"
-#include "message_filters/subscriber.h"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
 
@@ -91,7 +88,7 @@ protected:
 
 private:
   bool publish_voxel_;
-  rclcpp::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
+  nav2::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
   nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   unsigned int unknown_threshold_, mark_threshold_, size_z_;

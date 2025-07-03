@@ -80,7 +80,7 @@ void NonPersistentVoxelLayer::onInitialize()
   if (publish_voxel_) {
     voxel_pub_ =
       node->create_publisher<nav2_msgs::msg::VoxelGrid>(
-      "voxel_grid", rclcpp::QoS(1));
+      "voxel_grid", nav2::qos::StandardTopicQoS(1));
   }
 
   matchSize();
