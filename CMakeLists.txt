@@ -10,47 +10,28 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
-find_package(map_msgs REQUIRED)
-find_package(message_filters REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(visualization_msgs REQUIRED)
 find_package(nav2_voxel_grid REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
-find_package(Eigen3 REQUIRED)
+find_package(nav2_ros_common REQUIRED)
 
 set(dependencies
-	geometry_msgs
 	laser_geometry
-	map_msgs
-	message_filters
-	nav_msgs
 	pluginlib
 	sensor_msgs
-  nav2_msgs
+  	nav2_msgs
 	rclcpp
-	std_msgs
-	tf2
-	tf2_ros
-	visualization_msgs
 	nav2_voxel_grid
 	nav2_costmap_2d)
 
 set(library_name nonpersistent_voxel_layer_core)
 
-add_definitions(${EIGEN3_DEFINITIONS})
-
 include_directories(
     include
-    ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_library(${library_name} SHARED
@@ -60,11 +41,11 @@ add_library(${library_name} SHARED
 target_compile_definitions(${library_name} PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
 target_link_libraries(${library_name}
-  ${EIGEN3_LIBRARIES}
-)
-
-ament_target_dependencies(${library_name}
-  ${dependencies}
+  ${sensor_msgs_TARGETS}
+  laser_geometry::laser_geometry
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_voxel_grid::voxel_grid
+  nav2_ros_common::nav2_ros_common
 )
 
 if(BUILD_TESTING)
