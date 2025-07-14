@@ -44,6 +44,7 @@ target_link_libraries(${library_name}
   ${sensor_msgs_TARGETS}
   laser_geometry::laser_geometry
   nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_costmap_2d::layers
   nav2_voxel_grid::voxel_grid
   nav2_ros_common::nav2_ros_common
 )
