@@ -151,23 +151,23 @@ void NonPersistentVoxelLayer::updateBounds(
 
   // get the marking observations
   bool current = true;
-  std::vector<Observation> observations;
+  std::vector<Observation::ConstSharedPtr> observations;
   current = getMarkingObservations(observations) && current;
 
   // update the global current status
   current_ = current;
 
   // place the new obstacles into a priority queue... each with a priority of zero to begin with
-  for (std::vector<Observation>::const_iterator it = observations.begin();
+  for (std::vector<Observation::ConstSharedPtr>::const_iterator it = observations.begin();
     it != observations.end(); ++it)
   {
-    const Observation & obs = *it;
+    const Observation::ConstSharedPtr& obs = *it;
 
-    double sq_obstacle_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
+    double sq_obstacle_range = obs->obstacle_max_range_ * obs->obstacle_max_range_;
 
-    sensor_msgs::PointCloud2ConstIterator<float> it_x(*obs.cloud_, "x");
-    sensor_msgs::PointCloud2ConstIterator<float> it_y(*obs.cloud_, "y");
-    sensor_msgs::PointCloud2ConstIterator<float> it_z(*obs.cloud_, "z");
+    sensor_msgs::PointCloud2ConstIterator<float> it_x(obs->cloud_, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> it_y(obs->cloud_, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> it_z(obs->cloud_, "z");
     for (; it_x != it_x.end(); ++it_x, ++it_y, ++it_z)
     {
       // if the obstacle is too high or too far away from the robot we won't add it
@@ -176,9 +176,9 @@ void NonPersistentVoxelLayer::updateBounds(
       }
 
       // compute the squared distance from the hitpoint to the pointcloud's origin
-      double sq_dist = (*it_x - obs.origin_.x) * (*it_x - obs.origin_.x) +
-        (*it_y - obs.origin_.y) * (*it_y - obs.origin_.y) +
-        (*it_z - obs.origin_.z) * (*it_z - obs.origin_.z);
+      double sq_dist = (*it_x - obs->origin_.x) * (*it_x - obs->origin_.x) +
+        (*it_y - obs->origin_.y) * (*it_y - obs->origin_.y) +
+        (*it_z - obs->origin_.z) * (*it_z - obs->origin_.z);
 
       // if the point is far enough away... we won't consider it
       if (sq_dist >= sq_obstacle_range) {
