@@ -163,6 +163,12 @@ void NonPersistentVoxelLayer::updateBounds(
   {
     const Observation::ConstSharedPtr& obs = *it;
 
+    // the height filter of the observation buffer can leave a cloud without points, on which an
+    // iterator can not be created (it takes data.front())
+    if (obs->cloud_.height == 0 || obs->cloud_.width == 0) {
+      continue;
+    }
+
     double sq_obstacle_range = obs->obstacle_max_range_ * obs->obstacle_max_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> it_x(obs->cloud_, "x");
