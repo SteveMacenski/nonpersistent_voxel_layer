@@ -90,6 +90,19 @@ protected:
     double * max_x, double * max_y);
 
 private:
+  /**
+   * @brief Reset the cells written since the last reset, instead of the whole costmap and voxel
+   *        grid (on a large costmap that costs far more than the update itself), and add them to
+   *        the bounds so the master costmap is updated there too.
+   */
+  void resetUpdatedArea(double * min_x, double * min_y, double * max_x, double * max_y);
+  /** @brief Record that the costmap and voxel grid were written at cells [x0, x1] x [y0, y1] */
+  void markUpdated(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1);
+
+  // Cells written since the last reset (inclusive), valid if has_updated_area_
+  bool has_updated_area_{false};
+  unsigned int updated_min_x_{0}, updated_min_y_{0}, updated_max_x_{0}, updated_max_y_{0};
+
   bool publish_voxel_;
   rclcpp::Publisher<nav2_msgs::msg::VoxelGrid>::SharedPtr voxel_pub_;
   nav2_voxel_grid::VoxelGrid voxel_grid_;

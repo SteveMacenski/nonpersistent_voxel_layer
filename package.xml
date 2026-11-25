@@ -31,6 +31,7 @@
     <depend>nav2_costmap_2d</depend>
 
     <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <nav2_costmap_2d plugin="${prefix}/costmap_plugins.xml" />
