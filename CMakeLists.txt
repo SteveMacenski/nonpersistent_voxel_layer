@@ -52,6 +52,10 @@ target_link_libraries(${library_name}
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(test_partial_reset test/test_partial_reset.cpp)
+  target_link_libraries(test_partial_reset ${library_name})
 endif()
 
 install(TARGETS ${library_name}
