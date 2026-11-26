@@ -38,6 +38,8 @@
  *********************************************************************/
 
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <algorithm>
+#include <limits>
 #include <vector>
 #include "nonpersistent_voxel_layer/nonpersistent_voxel_layer.hpp"
 
@@ -106,6 +108,21 @@ void NonPersistentVoxelLayer::updateFootprint(
       min_x, min_y, max_x, max_y);
   }
 
+  if (!transformed_footprint_.empty()) {
+    // The footprint cells are set free here and again by ObstacleLayer::updateCosts
+    int x0 = std::numeric_limits<int>::max(), y0 = std::numeric_limits<int>::max();
+    int x1 = std::numeric_limits<int>::min(), y1 = std::numeric_limits<int>::min();
+    for (const auto & p : transformed_footprint_) {
+      int mx, my;
+      worldToMapEnforceBounds(p.x, p.y, mx, my);
+      x0 = std::min(x0, mx);
+      y0 = std::min(y0, my);
+      x1 = std::max(x1, mx);
+      y1 = std::max(y1, my);
+    }
+    markUpdated(x0, y0, x1, y1);
+  }
+
   setConvexPolygonCost(transformed_footprint_, nav2_costmap_2d::FREE_SPACE);
 }
 
@@ -126,20 +143,65 @@ void NonPersistentVoxelLayer::resetMaps()
 {
   ObstacleLayer::resetMaps();
   voxel_grid_.reset();
+  has_updated_area_ = false;
+}
+
+void NonPersistentVoxelLayer::markUpdated(
+  unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1)
+{
+  if (!has_updated_area_) {
+    updated_min_x_ = x0;
+    updated_min_y_ = y0;
+    updated_max_x_ = x1;
+    updated_max_y_ = y1;
+    has_updated_area_ = true;
+    return;
+  }
+  updated_min_x_ = std::min(updated_min_x_, x0);
+  updated_min_y_ = std::min(updated_min_y_, y0);
+  updated_max_x_ = std::max(updated_max_x_, x1);
+  updated_max_y_ = std::max(updated_max_y_, y1);
+}
+
+void NonPersistentVoxelLayer::resetUpdatedArea(
+  double * min_x, double * min_y, double * max_x, double * max_y)
+{
+  if (!has_updated_area_) {
+    return;
+  }
+  // The master costmap must also be updated where the obstacles of the last update were, or they
+  // stay there. Done before a rolling window moves the origin, which these cells were written with
+  double wx, wy;
+  mapToWorld(updated_min_x_, updated_min_y_, wx, wy);
+  touch(wx - resolution_ / 2.0, wy - resolution_ / 2.0, min_x, min_y, max_x, max_y);
+  mapToWorld(updated_max_x_, updated_max_y_, wx, wy);
+  touch(wx + resolution_ / 2.0, wy + resolution_ / 2.0, min_x, min_y, max_x, max_y);
+
+  std::unique_lock<Costmap2D::mutex_t> lock(*getMutex());
+  uint32_t * voxels = voxel_grid_.getData();
+  // value of a column after VoxelGrid::reset(): all voxels unknown
+  const uint32_t voxel_reset_value = ~static_cast<uint32_t>(0) >> 16;
+  const unsigned int width = updated_max_x_ - updated_min_x_ + 1;
+  for (unsigned int y = updated_min_y_; y <= updated_max_y_; ++y) {
+    const unsigned int index = getIndex(updated_min_x_, y);
+    std::fill_n(costmap_ + index, width, default_value_);
+    std::fill_n(voxels + index, width, voxel_reset_value);
+  }
+  has_updated_area_ = false;
 }
 
 void NonPersistentVoxelLayer::updateBounds(
   double robot_x, double robot_y, double robot_yaw,
   double * min_x, double * min_y, double * max_x, double * max_y)
 {
+  // reset what the last update wrote, instead of the whole maps
+  resetUpdatedArea(min_x, min_y, max_x, max_y);
+
   // update origin information for rolling costmap publication
   if (rolling_window_) {
     updateOrigin(robot_x - getSizeInMetersX() / 2,
       robot_y - getSizeInMetersY() / 2);
   }
-
-  // reset maps each iteration
-  resetMaps();
 
   // if not enabled, stop here
   if (!enabled_) {
@@ -162,6 +224,12 @@ void NonPersistentVoxelLayer::updateBounds(
     it != observations.end(); ++it)
   {
     const Observation & obs = *it;
+
+    // the height filter of the observation buffer can leave a cloud without points, on which an
+    // iterator can not be created (it takes data.front())
+    if (obs.cloud_->height == 0 || obs.cloud_->width == 0) {
+      continue;
+    }
 
     double sq_obstacle_range = obs.obstacle_max_range_ * obs.obstacle_max_range_;
 
@@ -196,6 +264,7 @@ void NonPersistentVoxelLayer::updateBounds(
       }
 
       // mark the cell in the voxel grid and check if we should also mark it in the costmap
+      markUpdated(mx, my, mx, my);
       if (voxel_grid_.markVoxelInMap(mx, my, mz, mark_threshold_)) {
         unsigned int index = getIndex(mx, my);
 
